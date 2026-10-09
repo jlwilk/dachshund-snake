@@ -11,7 +11,11 @@ Snake, but you're a dachshund, and the pup only ever gets longer.
 
 ## Pick your pup
 
-On the start screen (or after a bonk), choose a color — Red, Black & tan, Dapple or Cream — and a coat — Smooth, Long-haired or Wire-haired. Your choice is remembered.
+On the start screen (or after a bonk), choose a color — Red, Black & tan (the default), Dapple or Cream — and a coat — Smooth, Long-haired or Wire-haired. Your choice is remembered.
+
+### Easy mode
+
+Also on the start screen, choose Easy and the pup turns itself instead of bonking into walls (it still can't run into itself). Easy mode keeps its own best score.
 
 ## Run locally
 

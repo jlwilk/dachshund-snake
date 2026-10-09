@@ -2,6 +2,7 @@ import { createGame, queueDirection, step, lengthLabel } from './game.js';
 import { attachInput } from './input.js';
 import { draw, drawPreview } from './render.js';
 import { getStorage, loadBest, saveBest } from './best.js';
+import { MODES, loadMode, saveMode } from './mode.js';
 import { COLORS, COATS, loadLook, saveLook } from './look.js';
 
 const MAX_FRAME_MS = 250;
@@ -24,7 +25,8 @@ const HINTS = isTouch
   : { start: 'Arrow keys or WASD to steer. Press an arrow or Space to start.', resume: 'Press Space to keep going.', restart: 'Press Space or Enter to play again.' };
 
 const storage = getStorage();
-let best = loadBest(storage);
+let mode = loadMode(storage);
+let best = loadBest(storage, mode);
 let look = loadLook(storage);
 let game = createGame();
 let prev = game;
@@ -45,7 +47,7 @@ function showOverlay(title, message, hint, withPicker = false) {
 }
 
 function buildChips() {
-  const options = { color: COLORS, coat: COATS };
+  const options = { color: COLORS, coat: COATS, mode: MODES };
   for (const group of picker.querySelectorAll('.chips')) {
     const kind = group.dataset.kind;
     for (const { id, label } of options[kind]) {
@@ -63,15 +65,24 @@ function buildChips() {
 
 function syncChips() {
   for (const button of picker.querySelectorAll('button')) {
-    button.setAttribute('aria-checked', String(look[button.dataset.kind] === button.dataset.id));
+    const current = button.dataset.kind === 'mode' ? mode : look[button.dataset.kind];
+    button.setAttribute('aria-checked', String(current === button.dataset.id));
   }
 }
 
 function onChip(event) {
   const button = event.target.closest('button[data-kind]');
   if (!button) return;
-  look = { ...look, [button.dataset.kind]: button.dataset.id };
-  saveLook(storage, look);
+  if (button.dataset.kind === 'mode') {
+    mode = button.dataset.id;
+    saveMode(storage, mode);
+    best = loadBest(storage, mode);
+    updateHud();
+    if (phase === 'over') $('hint').textContent = overHint();
+  } else {
+    look = { ...look, [button.dataset.kind]: button.dataset.id };
+    saveLook(storage, look);
+  }
   syncChips();
   // Drop focus so Space/Enter go back to starting the game.
   button.blur();
@@ -86,6 +97,9 @@ function fitPreview() {
   previewCtx.setTransform(preview.width / w, 0, 0, preview.height / h, 0, 0);
 }
 
+const bestLabel = () => (mode === 'easy' ? 'Best (easy)' : 'Best');
+const overHint = () => `Score ${game.score} · ${bestLabel()} ${best}. ${HINTS.restart}`;
+
 function setPhase(next) {
   phase = next;
   pauseButton.disabled = phase === 'ready' || phase === 'over';
@@ -98,7 +112,7 @@ function setPhase(next) {
     showOverlay(
       'Bonk!',
       `Your pup reached ${lengthLabel(game.snake.length)} of pure sausage.`,
-      `Score ${game.score} · Best ${best}. ${HINTS.restart}`,
+      overHint(),
       true,
     );
   }
@@ -106,11 +120,12 @@ function setPhase(next) {
 
 function updateHud() {
   $('score').textContent = game.score;
+  $('best-label').textContent = bestLabel();
   $('best').textContent = best;
 }
 
 function startGame() {
-  game = createGame();
+  game = createGame({ easy: mode === 'easy' });
   prev = game;
   acc = 0;
   tick = 0;
@@ -122,7 +137,7 @@ function gameOver() {
   diedAt = performance.now();
   if (game.score > best) {
     best = game.score;
-    saveBest(storage, best);
+    saveBest(storage, best, mode);
   }
   updateHud();
   setPhase('over');

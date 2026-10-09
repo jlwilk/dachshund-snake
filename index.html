@@ -166,7 +166,7 @@
   <main class="app">
     <header class="hud">
       <div>Score <b id="score">0</b></div>
-      <div>Best <b id="best">0</b></div>
+      <div><span id="best-label">Best</span> <b id="best">0</b></div>
       <div class="spacer"></div>
       <button id="pause" type="button" aria-label="Pause">❚❚</button>
     </header>
@@ -180,6 +180,7 @@
             <canvas id="preview" aria-hidden="true"></canvas>
             <div class="chips" role="radiogroup" aria-label="Color" data-kind="color"></div>
             <div class="chips" role="radiogroup" aria-label="Coat" data-kind="coat"></div>
+            <div class="chips" role="radiogroup" aria-label="Mode" data-kind="mode"></div>
           </div>
           <p class="hint" id="hint"></p>
         </div>
