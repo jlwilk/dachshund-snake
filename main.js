@@ -4,6 +4,7 @@ import { draw, drawPreview } from './render.js';
 import { getStorage, loadBest, saveBest } from './best.js';
 import { MODES, loadMode, saveMode } from './mode.js';
 import { COLORS, COATS, loadLook, saveLook } from './look.js';
+import { gameEvent, track } from './track.js';
 
 const MAX_FRAME_MS = 250;
 // Ignore restart taps/keys right after death so a stray press can't skip the Bonk card.
@@ -133,6 +134,7 @@ function startGame() {
   tick = 0;
   updateHud();
   setPhase('playing');
+  track(gameEvent('start', { mode: playedMode, look }));
 }
 
 function gameOver() {
@@ -143,6 +145,7 @@ function gameOver() {
   }
   updateHud();
   setPhase('over');
+  track(gameEvent('over', { mode: playedMode, look, score: game.score }));
 }
 
 function togglePause() {
