@@ -24,6 +24,10 @@ export function attachInput({ keyTarget, board, dpad, pauseButton, onDirection, 
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const action = keyToAction(e.key);
     if (!action) return;
+    // Space/Enter on a focused button (e.g. a picker chip) should press that
+    // button, not start the game. Buttons blur after a mouse click, so Space
+    // still starts the game after picking with the mouse.
+    if (action.type === 'primary' && e.target.closest?.('button')) return;
     e.preventDefault();
     if (action.type === 'direction') onDirection(action.dir);
     else if (e.repeat) return;

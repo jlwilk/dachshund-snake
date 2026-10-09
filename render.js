@@ -401,14 +401,15 @@ function drawHead(ctx, at, angle, cell, tick, p, coat) {
     earPath(ctx, side, cell, coat);
     ctx.fill();
     ctx.stroke();
+    if (coat === 'long') drawEarStrands(ctx, side, cell, p);
     ctx.restore();
   }
 
+  if (coat === 'wire') drawBeard(ctx, cell, p);
   ctx.fillStyle = p.points ?? p.body;
   ellipse(ctx, cell * 0.4, 0, cell * 0.36, cell * 0.22);
   ctx.fill();
   ctx.stroke();
-  if (coat === 'wire') drawBeard(ctx, cell, p);
   ctx.fillStyle = p.body;
   ellipse(ctx, 0, 0, cell * 0.42, cell * 0.4);
   ctx.fill();
@@ -437,19 +438,36 @@ function earPath(ctx, side, cell, coat) {
     ellipse(ctx, -cell * 0.1, cy, cell * 0.3, ry);
     return;
   }
-  const cx = -cell * 0.2;
-  const rx = cell * 0.405;
+  // Hangs further back than the smooth ear, with a scalloped, feathered end.
+  const cx = -cell * 0.3;
+  const rx = cell * 0.47;
   ctx.beginPath();
-  for (let k = 0; k <= 48; k++) {
-    const a = (k / 48) * Math.PI * 2;
+  for (let k = 0; k <= 72; k++) {
+    const a = (k / 72) * Math.PI * 2;
     const back = Math.max(0, -Math.cos(a));
-    const wave = 1 + back * 0.09 * Math.sin(a * 9);
+    const wave = 1 + back * 0.16 * Math.abs(Math.sin(a * 5));
     const x = cx + Math.cos(a) * rx * wave;
-    const y = cy + Math.sin(a) * ry * (1 + back * 0.12) * wave;
+    const y = cy + Math.sin(a) * ry * (1 + back * 0.25) * wave;
     if (k === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
   ctx.closePath();
+}
+
+// Long-haired: a couple of lighter wavy strands down each ear.
+function drawEarStrands(ctx, side, cell, p) {
+  ctx.save();
+  ctx.strokeStyle = lighten(p.ear, 0.3);
+  ctx.lineWidth = cell * 0.035;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (const off of [-0.05, 0.05]) {
+    const y0 = side * cell * (0.06 + off);
+    ctx.moveTo(-cell * 0.1, y0);
+    ctx.bezierCurveTo(-cell * 0.3, y0 + cell * 0.05, -cell * 0.45, y0 - cell * 0.05, -cell * 0.65, y0 + cell * 0.02);
+  }
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawEyes(ctx, cell) {
@@ -481,29 +499,38 @@ function wireAccent(p) {
 // Wire-haired: shaggy brows over the outer edge of each eye (drawn under
 // the eyes so they never hide them).
 function drawBushyBrows(ctx, cell, p) {
-  furPass(ctx, cell * 0.6, p.outline, wireAccent(p), () => {
+  furPass(ctx, cell * 0.8, p.outline, wireAccent(p), () => {
     for (const side of [-1, 1]) {
       for (let k = 0; k < 3; k++) {
         tuftPath(ctx, {
-          x: cell * (0.03 + k * 0.05), y: side * cell * 0.17, nx: 0.55, ny: side * 0.83, tx: 1, ty: 0,
-          len: cell * (0.16 - k * 0.02), width: cell * 0.11, sweep: cell * 0.03,
+          x: cell * (0.02 + k * 0.07), y: side * cell * 0.16, nx: 0.55, ny: side * 0.83, tx: 1, ty: 0,
+          len: cell * (0.23 - k * 0.03), width: cell * 0.16, sweep: cell * 0.05,
         });
       }
     }
   });
 }
 
-// Wire-haired: beard and mustache tufts along the sides of the muzzle,
-// reaching past the end of the snout.
+// Wire-haired: a shaggy beard framing the muzzle, drawn under it so it shows
+// as a scruffy fringe a little wider than the snout, hanging to the sides
+// and just past the nose.
 function drawBeard(ctx, cell, p) {
-  furPass(ctx, cell * 0.6, p.outline, wireAccent(p), () => {
+  furPass(ctx, cell * 0.7, p.outline, wireAccent(p), () => {
+    ctx.moveTo(cell * 0.84, 0);
+    ctx.ellipse(cell * 0.48, 0, cell * 0.36, cell * 0.27, 0, 0, Math.PI * 2);
     for (const side of [-1, 1]) {
-      for (let k = 0; k < 3; k++) {
+      for (let k = 0; k < 4; k++) {
         tuftPath(ctx, {
-          x: cell * (0.5 + k * 0.09), y: side * cell * (0.15 - k * 0.02), nx: 0.6, ny: side * 0.8, tx: 1, ty: 0,
-          len: cell * (0.16 + k * 0.03), width: cell * 0.15, sweep: cell * (0.08 + k * 0.05),
+          x: cell * (0.3 + k * 0.13), y: side * cell * (0.24 - k * 0.03), nx: 0.25, ny: side * 0.97, tx: 1, ty: 0,
+          len: cell * (0.12 - k * 0.015), width: cell * 0.14, sweep: cell * 0.04,
         });
       }
+    }
+    for (const y of [-0.1, 0, 0.1]) {
+      tuftPath(ctx, {
+        x: cell * 0.8, y: cell * y, nx: 1, ny: y, tx: 0, ty: 1,
+        len: cell * 0.1, width: cell * 0.11, sweep: 0,
+      });
     }
   });
 }
