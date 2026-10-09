@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6ead8">
+  <title>Dachshund Snake</title>
+  <style>
+    :root {
+      --bg: #f6ead8;
+      --ink: #4a2a14;
+      --panel: #fffaf2;
+      --button: #e9d3b5;
+      --button-press: #d9bd97;
+      --shadow: 0 6px 24px rgb(74 42 20 / 0.18);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #241912;
+        --ink: #f6ead8;
+        --panel: #3a2a1e;
+        --button: #5a4130;
+        --button-press: #6d5039;
+        --shadow: 0 6px 24px rgb(0 0 0 / 0.4);
+      }
+    }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .app {
+      box-sizing: border-box;
+      height: 100dvh;
+      max-width: 720px;
+      margin: 0 auto;
+      padding:
+        max(12px, env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        max(12px, env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-areas: "hud" "stage" "dpad";
+      gap: 12px;
+    }
+    .hud { grid-area: hud; display: flex; align-items: center; gap: 16px; font-weight: 600; }
+    .hud b { font-size: 1.25rem; }
+    .hud .spacer { flex: 1; }
+    button {
+      font: inherit;
+      color: var(--ink);
+      background: var(--button);
+      border: 0;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    button:active { background: var(--button-press); }
+    button:disabled { opacity: 0.4; cursor: default; }
+    #pause { width: 44px; height: 44px; font-size: 1rem; }
+    .stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; touch-action: none; }
+    #board {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .overlay[hidden] { display: none; }
+    .card {
+      max-width: min(80%, 360px);
+      padding: 16px 20px;
+      border-radius: 14px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .card h1 { margin: 0 0 8px; font-size: 1.5rem; }
+    .card p { margin: 6px 0; line-height: 1.4; }
+    .card .hint { opacity: 0.75; font-size: 0.9rem; }
+    .dpad {
+      grid-area: dpad;
+      display: none;
+      grid-template-columns: repeat(3, 64px);
+      grid-template-rows: repeat(2, 64px);
+      gap: 8px;
+      justify-content: center;
+      touch-action: none;
+    }
+    .dpad button { font-size: 1.5rem; }
+    .dpad [data-dir="up"] { grid-column: 2; grid-row: 1; }
+    .dpad [data-dir="left"] { grid-column: 1; grid-row: 2; }
+    .dpad [data-dir="down"] { grid-column: 2; grid-row: 2; }
+    .dpad [data-dir="right"] { grid-column: 3; grid-row: 2; }
+    @media (pointer: coarse) {
+      .dpad { display: grid; }
+    }
+    @media (pointer: coarse) and (orientation: landscape) {
+      .app {
+        max-width: none;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas: "hud hud" "stage dpad";
+      }
+      .dpad { align-content: center; }
+      .card { max-width: 260px; padding: 12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="hud">
+      <div>Score <b id="score">0</b></div>
+      <div>Best <b id="best">0</b></div>
+      <div class="spacer"></div>
+      <button id="pause" type="button" aria-label="Pause">❚❚</button>
+    </header>
+    <div class="stage" id="stage">
+      <canvas id="board" aria-label="Game board"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="card">
+          <h1 id="title">Dachshund Snake</h1>
+          <p id="message"></p>
+          <p class="hint" id="hint"></p>
+        </div>
+      </div>
+    </div>
+    <nav class="dpad" id="dpad" aria-label="Direction controls">
+      <button type="button" data-dir="up" aria-label="Up">▲</button>
+      <button type="button" data-dir="left" aria-label="Left">◀</button>
+      <button type="button" data-dir="down" aria-label="Down">▼</button>
+      <button type="button" data-dir="right" aria-label="Right">▶</button>
+    </nav>
+  </main>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
