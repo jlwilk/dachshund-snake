@@ -104,6 +104,27 @@ death, self-collision death, tail-vacating move allowed, reversal ignored,
 direction queue, treat never spawns on the pup, speed-up and floor.
 Rendering and input are verified by playing it in a browser, on desktop and in phone emulation.
 
+## Pick your pup
+
+Added 2026-10-09 at the user's request.
+
+- Two independent choices, 12 combinations:
+  - **Color:** Red (classic brown), Black & tan (near-black body with tan
+    muzzle, eyebrow dots and legs), Dapple (brown base with irregular
+    lighter patches that stay put on the body as it moves), Cream (pale
+    golden).
+  - **Coat:** Smooth (short hair, the original look), Long-haired (feathery
+    fringe along the body, longer wavy ears, plumed tail), Wire-haired
+    (bushy eyebrows and beard on the muzzle, scruffy body texture, shorter
+    ears).
+- Chosen on the start card and the game-over card (not while paused), as
+  two rows of chip buttons. The card shows its own small live preview of
+  the pup in the chosen look, because the card covers the pup on the board.
+- Choosing a chip never starts or restarts the game; on phones a tap on a
+  chip is not a board tap.
+- The choice is remembered in `localStorage` (try/catch, same as best
+  score); unknown or missing stored values fall back to Red / Smooth.
+
 ## Out of scope
 
-Sound, levels/obstacles, online leaderboards, skins.
+Sound, levels/obstacles, online leaderboards.

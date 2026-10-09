@@ -1188,3 +1188,194 @@ Expected: JSON with `"html_url": "https://jlwilk.github.io/dachshund-snake/"`.
 - [ ] **Step 5: Verify the live site**
 
 Poll `gh api repos/jlwilk/dachshund-snake/pages/builds/latest --jq .status` until `built` (usually 1–2 min), then open the Pages URL with chrome-devtools and confirm the ready card renders and the console is clean.
+
+---
+
+### Task 5: Pick your pup (color × coat)
+
+Added after Tasks 1–4 at the user's request. Spec section: "Pick your pup".
+
+**Files:**
+- Create: `look.js`, `tests/look.test.js`
+- Modify: `render.js`, `main.js`, `index.html`, `README.md`
+
+**Interfaces:**
+- Consumes: `getStorage()` from `best.js`; `draw`, `bodyPath` and the private draw helpers in `render.js`; the phase handling in `main.js` (`setPhase`, `showOverlay`, `onTap`).
+- Produces:
+  - `look.js`: `COLORS` (ordered `[{id, label}]`), `COATS` (ordered `[{id, label}]`), `DEFAULT_LOOK = { color: 'red', coat: 'smooth' }`, `normalizeLook(value): {color, coat}`, `loadLook(storage): {color, coat}`, `saveLook(storage, look): void`.
+  - `render.js`: `draw(ctx, view)` view gains `look: {color, coat}` (missing → `DEFAULT_LOOK`); new `drawPreview(ctx, { look, width, height, time, tick })`.
+
+- [ ] **Step 1: Write the failing tests** in `tests/look.test.js`
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { COLORS, COATS, DEFAULT_LOOK, normalizeLook, loadLook, saveLook } from '../look.js';
+
+const memory = () => {
+  const data = new Map();
+  return { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, String(v)) };
+};
+const broken = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } };
+
+test('offers four colors and three coats in order', () => {
+  assert.deepEqual(COLORS.map(c => c.id), ['red', 'blackTan', 'dapple', 'cream']);
+  assert.deepEqual(COLORS.map(c => c.label), ['Red', 'Black & tan', 'Dapple', 'Cream']);
+  assert.deepEqual(COATS.map(c => c.id), ['smooth', 'long', 'wire']);
+  assert.deepEqual(COATS.map(c => c.label), ['Smooth', 'Long-haired', 'Wire-haired']);
+});
+
+test('default look is red smooth', () => {
+  assert.deepEqual(DEFAULT_LOOK, { color: 'red', coat: 'smooth' });
+});
+
+test('normalizeLook keeps valid fields and replaces invalid ones', () => {
+  assert.deepEqual(normalizeLook({ color: 'dapple', coat: 'wire' }), { color: 'dapple', coat: 'wire' });
+  assert.deepEqual(normalizeLook({ color: 'purple', coat: 'long' }), { color: 'red', coat: 'long' });
+  assert.deepEqual(normalizeLook({ color: 'cream', coat: 'toString' }), { color: 'cream', coat: 'smooth' });
+  assert.deepEqual(normalizeLook(null), DEFAULT_LOOK);
+  assert.deepEqual(normalizeLook('cream'), DEFAULT_LOOK);
+});
+
+test('saves and loads a look', () => {
+  const s = memory();
+  saveLook(s, { color: 'blackTan', coat: 'long' });
+  assert.deepEqual(loadLook(s), { color: 'blackTan', coat: 'long' });
+});
+
+test('junk or missing stored look reads as default', () => {
+  assert.deepEqual(loadLook(memory()), DEFAULT_LOOK);
+  const s = memory();
+  s.setItem('dachshund-snake:look', '{not json');
+  assert.deepEqual(loadLook(s), DEFAULT_LOOK);
+});
+
+test('no storage or blocked storage never throws', () => {
+  assert.deepEqual(loadLook(null), DEFAULT_LOOK);
+  assert.deepEqual(loadLook(broken), DEFAULT_LOOK);
+  assert.doesNotThrow(() => saveLook(null, DEFAULT_LOOK));
+  assert.doesNotThrow(() => saveLook(broken, DEFAULT_LOOK));
+});
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `npm test`
+Expected: FAIL — `Cannot find module '.../look.js'`; the other 26 still pass.
+
+- [ ] **Step 3: Implement `look.js`**
+
+```js
+const KEY = 'dachshund-snake:look';
+
+export const COLORS = [
+  { id: 'red', label: 'Red' },
+  { id: 'blackTan', label: 'Black & tan' },
+  { id: 'dapple', label: 'Dapple' },
+  { id: 'cream', label: 'Cream' },
+];
+
+export const COATS = [
+  { id: 'smooth', label: 'Smooth' },
+  { id: 'long', label: 'Long-haired' },
+  { id: 'wire', label: 'Wire-haired' },
+];
+
+export const DEFAULT_LOOK = { color: 'red', coat: 'smooth' };
+
+const has = (options, id) => options.some(o => o.id === id);
+
+export function normalizeLook(value) {
+  const v = value && typeof value === 'object' ? value : {};
+  return {
+    color: has(COLORS, v.color) ? v.color : DEFAULT_LOOK.color,
+    coat: has(COATS, v.coat) ? v.coat : DEFAULT_LOOK.coat,
+  };
+}
+
+export function loadLook(storage) {
+  try {
+    return normalizeLook(JSON.parse(storage?.getItem(KEY) ?? 'null'));
+  } catch {
+    return { ...DEFAULT_LOOK };
+  }
+}
+
+export function saveLook(storage, look) {
+  try {
+    storage?.setItem(KEY, JSON.stringify(normalizeLook(look)));
+  } catch {
+    // Storage blocked — the choice just won't persist.
+  }
+}
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `npm test`
+Expected: 32/32 PASS.
+
+- [ ] **Step 5: Renderer — palettes and coats** (`render.js`)
+
+Replace the single `COLORS` object with field/bone colors (unchanged values) plus a `PALETTES` map keyed by color id. Each palette has `outline, body, stripe, leg, ear`, plus optional `points` (tan accents) and `patch` (dapple patches). Use these values:
+
+| id | outline | body | stripe | leg | ear | points | patch |
+|---|---|---|---|---|---|---|---|
+| red | `#6b3417` | `#a65a2a` | `#c98a55` | `#5a2b10` | `#6e3416` | — | — |
+| blackTan | `#120b07` | `#2b1d16` | `#45322a` | `#c47a3c` | `#22160f` | `#c47a3c` | — |
+| dapple | `#4e2a14` | `#8a5432` | `#a7714c` | `#4a2610` | `#5e3218` | — | `#d9c4a8` |
+| cream | `#a87e45` | `#e3c18c` | `#f2dcb4` | `#b98b52` | `#cfa368` | — | — |
+
+Look-specific drawing, all on canvas, all sized relative to `cell`:
+- **Black & tan:** legs use the tan `leg` color (already in the table); draw a tan muzzle (the snout ellipse filled `points` instead of `body`) and two tan eyebrow dots just above and behind the eyes (radius ≈ 0.055 cell).
+- **Dapple:** after the body strokes, draw 1–2 irregular light patches (`patch` color, ~0.15–0.25 cell, inside the body width) on some segments. Choose which segments and the patch offsets from a deterministic hash of the segment's index counted from the head, so patches stay on the same part of the dog as it moves and don't flicker.
+- **Long-haired:** before the body, a feathered fringe along both sides of the body path (short backward-swept wisps or a wavy wider stroke in a slightly lighter shade than `body`); ears ~35% longer with a wavy lower edge; tail becomes a plume (wider, longer, wispy).
+- **Wire-haired:** short bristly strokes along the body outline; bushy eyebrows (a few short strokes above each eye); a beard/mustache tuft at the sides of the muzzle extending past the snout; ears ~20% shorter.
+- **Smooth:** exactly the current look.
+
+Coat and color are independent: every combination (12) must render. `draw` reads `view.look` (fall back to `DEFAULT_LOOK` from `look.js`) and passes the palette and coat into the helpers. Keep the drawing helpers in `render.js`; split into helpers per coat feature rather than one long function.
+
+Add `drawPreview(ctx, { look, width, height, time, tick })`: draws a short side-on pup (4 segments in a straight line heading right, head on the right) centred in a `width × height` area on a plain rounded grass-coloured background, reusing the same body/legs/tail/head helpers (so the preview always matches the in-game pup). Cell size = `height * 0.8` (or smaller if the 5-cell length doesn't fit the width).
+
+- [ ] **Step 6: Picker UI** (`index.html`, `main.js`)
+
+`index.html`: inside `.card`, between `#message` and `#hint`, add:
+
+```html
+<div class="picker" id="picker">
+  <canvas id="preview" aria-hidden="true"></canvas>
+  <div class="chips" role="radiogroup" aria-label="Color" data-kind="color"></div>
+  <div class="chips" role="radiogroup" aria-label="Coat" data-kind="coat"></div>
+</div>
+```
+
+Styles: `.picker` gets `pointer-events: auto` (the overlay is `pointer-events: none`); the preview canvas is 160×56 CSS px (rendered at `devicePixelRatio`); chips are small rounded buttons (min height 32px, wrap onto multiple lines), the selected chip clearly highlighted using the existing `--button`/`--button-press`/`--ink` tokens, readable in dark mode. In the existing landscape-phone media query, keep the card within the board: shrink the preview and chip padding as needed.
+
+`main.js`:
+- `let look = loadLook(storage);` — build the chips from `COLORS`/`COATS` (buttons with `role="radio"`, `aria-checked`, `data-kind`, `data-id`).
+- Show `#picker` only in `ready` and `over` phases (hidden in `paused`).
+- Chip selection: listen for `click` on the picker; set `look = { ...look, [kind]: id }`, `saveLook(storage, look)`, update `aria-checked`, then `button.blur()` so Space/Enter still start the game.
+- A tap or click on the picker must not reach the stage's tap handler: stop propagation of `pointerdown` and `pointerup` on `#picker`.
+- Pass `look` into `draw(...)` every frame, and while the picker is visible also call `drawPreview` on the preview canvas each frame (so the tail wags).
+
+- [ ] **Step 7: README** — add under "Controls":
+
+```markdown
+## Pick your pup
+
+On the start screen (or after a bonk), choose a color — Red, Black & tan, Dapple or Cream — and a coat — Smooth, Long-haired or Wire-haired. Your choice is remembered.
+```
+
+- [ ] **Step 8: Verify in a browser** (chrome-devtools MCP, `python3 -m http.server` on a free port)
+- Screenshot the start card for all 12 combinations (or a contact sheet of them) and an in-game shot of each coat with at least two different colors. Each combination must be visibly distinct and still read as a dachshund.
+- Choosing chips with the mouse does not start the game; Space afterwards does start it.
+- Reload: the chosen look persists.
+- Phone emulation (390×844 portrait and 844×390 landscape, touch): tapping a chip changes the look without starting the game; tapping the board outside the card starts it; the card fits within the board with no overflow.
+- Console clean. `npm test` 32/32.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add look.js tests/look.test.js render.js main.js index.html README.md
+git commit -m "Add pup picker: four colors and three coats"
+```
