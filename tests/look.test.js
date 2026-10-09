@@ -15,13 +15,13 @@ test('offers four colors and three coats in order', () => {
   assert.deepEqual(COATS.map(c => c.label), ['Smooth', 'Long-haired', 'Wire-haired']);
 });
 
-test('default look is red smooth', () => {
-  assert.deepEqual(DEFAULT_LOOK, { color: 'red', coat: 'smooth' });
+test('default look is black and tan smooth', () => {
+  assert.deepEqual(DEFAULT_LOOK, { color: 'blackTan', coat: 'smooth' });
 });
 
 test('normalizeLook keeps valid fields and replaces invalid ones', () => {
   assert.deepEqual(normalizeLook({ color: 'dapple', coat: 'wire' }), { color: 'dapple', coat: 'wire' });
-  assert.deepEqual(normalizeLook({ color: 'purple', coat: 'long' }), { color: 'red', coat: 'long' });
+  assert.deepEqual(normalizeLook({ color: 'purple', coat: 'long' }), { color: 'blackTan', coat: 'long' });
   assert.deepEqual(normalizeLook({ color: 'cream', coat: 'toString' }), { color: 'cream', coat: 'smooth' });
   assert.deepEqual(normalizeLook(null), DEFAULT_LOOK);
   assert.deepEqual(normalizeLook('cream'), DEFAULT_LOOK);

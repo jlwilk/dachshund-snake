@@ -13,7 +13,7 @@ export const COATS = [
   { id: 'wire', label: 'Wire-haired' },
 ];
 
-export const DEFAULT_LOOK = { color: 'red', coat: 'smooth' };
+export const DEFAULT_LOOK = { color: 'blackTan', coat: 'smooth' };
 
 const has = (options, id) => options.some(o => o.id === id);
 

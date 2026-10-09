@@ -130,3 +130,74 @@ test('lengthLabel shows cm under a metre and metres above', () => {
   assert.equal(lengthLabel(10), '1.5 m');
   assert.equal(lengthLabel(20), '3 m');
 });
+
+const easy5 = overrides => ({ ...createGame({ size: 5, rng: zero, easy: true }), ...overrides });
+const at = (x, y) => ({ x, y });
+
+test('createGame defaults easy to false and passes easy through', () => {
+  assert.equal(createGame({ rng: zero }).easy, false);
+  assert.equal(createGame({ rng: zero, easy: true }).easy, true);
+});
+
+test('easy: equal room both ways turns clockwise at the right wall', () => {
+  const g = easy5({ snake: [at(4, 2), at(3, 2), at(2, 2)], dir: 'right', treat: at(0, 4) });
+  const { state, event } = step(g, zero);
+  assert.equal(event, null);
+  assert.equal(state.alive, true);
+  assert.equal(state.dir, 'down');
+  assert.deepEqual(state.snake[0], at(4, 3));
+});
+
+test('easy: turns toward the side with more room', () => {
+  const g = easy5({ snake: [at(4, 3), at(3, 3), at(2, 3)], dir: 'right', treat: at(0, 0) });
+  const { state } = step(g, zero);
+  assert.equal(state.dir, 'up');
+  assert.deepEqual(state.snake[0], at(4, 2));
+});
+
+test('easy: corner turns to the only open side', () => {
+  const g = easy5({ snake: [at(4, 0), at(3, 0), at(2, 0)], dir: 'right', treat: at(0, 4) });
+  const { state } = step(g, zero);
+  assert.equal(state.alive, true);
+  assert.equal(state.dir, 'down');
+  assert.deepEqual(state.snake[0], at(4, 1));
+});
+
+test('easy: a body cell blocks one side so it turns the other way', () => {
+  const g = easy5({ snake: [at(4, 2), at(3, 2), at(3, 3), at(4, 3), at(4, 4)], dir: 'right', treat: at(0, 0) });
+  const { state } = step(g, zero);
+  assert.equal(state.dir, 'up');
+  assert.deepEqual(state.snake[0], at(4, 1));
+});
+
+test('easy: dies when both sides are blocked, snake unchanged', () => {
+  const snake = [at(4, 2), at(3, 2), at(3, 1), at(4, 1), at(4, 0), at(3, 0), at(2, 0),
+    at(2, 1), at(2, 2), at(2, 3), at(3, 3), at(4, 3), at(4, 4)];
+  const g = easy5({ snake, dir: 'right', treat: at(0, 4) });
+  const { state, event } = step(g, zero);
+  assert.equal(event, 'died');
+  assert.equal(state.alive, false);
+  assert.deepEqual(state.snake, snake);
+});
+
+test('easy: auto-turn onto a treat eats it', () => {
+  const g = easy5({ snake: [at(4, 2), at(3, 2), at(2, 2)], dir: 'right', treat: at(4, 3) });
+  const { state, event } = step(g, zero);
+  assert.equal(event, 'ate');
+  assert.equal(state.snake.length, 4);
+  assert.equal(state.score, 1);
+});
+
+test('easy: a queued in-bounds turn is used normally', () => {
+  const g = queueDirection(easy5({ snake: [at(4, 2), at(3, 2), at(2, 2)], dir: 'right', treat: at(0, 4) }), 'up');
+  const { state } = step(g, zero);
+  assert.equal(state.dir, 'up');
+  assert.deepEqual(state.snake[0], at(4, 1));
+});
+
+test('easy off still dies at the right wall', () => {
+  const g = game5({ snake: [at(4, 2), at(3, 2), at(2, 2)], dir: 'right', treat: at(0, 4), easy: false });
+  const { state, event } = step(g, zero);
+  assert.equal(event, 'died');
+  assert.equal(state.alive, false);
+});

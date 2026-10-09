@@ -27,3 +27,20 @@ test('no storage or blocked storage never throws', () => {
   assert.doesNotThrow(() => saveBest(null, 5));
   assert.doesNotThrow(() => saveBest(broken, 5));
 });
+
+test('easy and normal bests are stored independently', () => {
+  const s = memory();
+  saveBest(s, 7, 'normal');
+  saveBest(s, 3, 'easy');
+  assert.equal(loadBest(s, 'normal'), 7);
+  assert.equal(loadBest(s, 'easy'), 3);
+  assert.equal(loadBest(memory(), 'easy'), 0);
+});
+
+test('a one-arg save is read back as the normal best', () => {
+  const s = memory();
+  saveBest(s, 9);
+  assert.equal(loadBest(s), 9);
+  assert.equal(loadBest(s, 'normal'), 9);
+  assert.equal(loadBest(s, 'easy'), 0);
+});
