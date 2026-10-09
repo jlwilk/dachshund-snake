@@ -2,7 +2,7 @@
 
 Snake, but you're a dachshund, and the pup only ever gets longer.
 
-**Play:** https://jlwilk.github.io/dachshund-snake/
+**Play:** https://frankie.wilkloud.com/
 
 ## Controls
 
