@@ -79,6 +79,12 @@ export function step(game, rng = Math.random) {
   const head = game.snake[0];
   let next = { x: head.x + DIRS[dir].x, y: head.y + DIRS[dir].y };
 
+  // Easy mode: a press into the wall is discarded, so the turn starts from the current heading.
+  if (game.easy && queued && !inBounds(game.size, next)) {
+    dir = game.dir;
+    next = { x: head.x + DIRS[dir].x, y: head.y + DIRS[dir].y };
+  }
+
   if (!inBounds(game.size, next) && game.easy) {
     const turned = autoTurn(game, dir);
     if (turned) {

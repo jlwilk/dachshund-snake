@@ -26,6 +26,7 @@ const HINTS = isTouch
 
 const storage = getStorage();
 let mode = loadMode(storage);
+let playedMode = mode;
 let best = loadBest(storage, mode);
 let look = loadLook(storage);
 let game = createGame();
@@ -77,8 +78,8 @@ function onChip(event) {
     mode = button.dataset.id;
     saveMode(storage, mode);
     best = loadBest(storage, mode);
-    updateHud();
-    if (phase === 'over') $('hint').textContent = overHint();
+    // The over card keeps describing the finished game; only the HUD follows the chip.
+    updateHud(phase === 'over' ? 0 : game.score);
   } else {
     look = { ...look, [button.dataset.kind]: button.dataset.id };
     saveLook(storage, look);
@@ -97,8 +98,8 @@ function fitPreview() {
   previewCtx.setTransform(preview.width / w, 0, 0, preview.height / h, 0, 0);
 }
 
-const bestLabel = () => (mode === 'easy' ? 'Best (easy)' : 'Best');
-const overHint = () => `Score ${game.score} · ${bestLabel()} ${best}. ${HINTS.restart}`;
+const bestLabel = m => (m === 'easy' ? 'Best (easy)' : 'Best');
+const overHint = () => `Score ${game.score} · ${bestLabel(playedMode)} ${loadBest(storage, playedMode)}. ${HINTS.restart}`;
 
 function setPhase(next) {
   phase = next;
@@ -118,13 +119,14 @@ function setPhase(next) {
   }
 }
 
-function updateHud() {
-  $('score').textContent = game.score;
-  $('best-label').textContent = bestLabel();
+function updateHud(score = game.score) {
+  $('score').textContent = score;
+  $('best-label').textContent = bestLabel(mode);
   $('best').textContent = best;
 }
 
 function startGame() {
+  playedMode = mode;
   game = createGame({ easy: mode === 'easy' });
   prev = game;
   acc = 0;

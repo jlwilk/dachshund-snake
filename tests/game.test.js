@@ -202,24 +202,49 @@ test('easy off still dies at the right wall', () => {
   assert.equal(state.alive, false);
 });
 
-test('easy: a queued reversal of the auto-turn direction is dropped', () => {
-  const g = easy5({ snake: [at(4, 2), at(3, 2), at(2, 2)], dir: 'up', queue: ['right', 'up'], treat: at(0, 0) });
+test('easy: a queued non-reversal follow-up still applies after an auto-turn', () => {
+  let g = easy5({ snake: [at(4, 0), at(4, 1), at(4, 2)], dir: 'up', treat: at(0, 4) });
+  g = queueDirection(queueDirection(g, 'right'), 'down');
+  assert.deepEqual(g.queue, ['right', 'down']);
   const first = step(g, zero);
-  assert.equal(first.state.dir, 'down');
+  assert.equal(first.state.alive, true);
+  assert.equal(first.state.dir, 'left');
   const second = step(first.state, zero);
   assert.equal(second.state.alive, true);
   assert.equal(second.state.dir, 'down');
-  assert.deepEqual(second.state.snake[0], at(4, 4));
+  assert.deepEqual(second.state.snake[0], at(3, 1));
 });
 
-test('easy: a queued non-reversal follow-up still applies after an auto-turn', () => {
-  const g = easy5({ snake: [at(4, 2), at(3, 2), at(2, 2)], dir: 'up', queue: ['right', 'left'], treat: at(0, 0) });
-  const first = step(g, zero);
-  assert.equal(first.state.dir, 'down');
-  const second = step(first.state, zero);
-  assert.equal(second.state.alive, true);
-  assert.equal(second.state.dir, 'left');
-  assert.deepEqual(second.state.snake[0], at(3, 3));
+test('easy: corner heading up with right pressed survives and turns left', () => {
+  const g = queueDirection(easy5({ snake: [at(4, 0), at(4, 1), at(4, 2)], dir: 'up', treat: at(0, 4) }), 'right');
+  const { state } = step(g, zero);
+  assert.equal(state.alive, true);
+  assert.equal(state.dir, 'left');
+  assert.deepEqual(state.snake[0], at(3, 0));
+});
+
+test('easy: corner heading right with up pressed survives and turns down', () => {
+  const g = queueDirection(easy5({ snake: [at(4, 0), at(3, 0), at(2, 0)], dir: 'right', treat: at(0, 4) }), 'up');
+  const { state } = step(g, zero);
+  assert.equal(state.alive, true);
+  assert.equal(state.dir, 'down');
+  assert.deepEqual(state.snake[0], at(4, 1));
+});
+
+test('easy: a press into the top wall away from a corner is discarded', () => {
+  const g = queueDirection(easy5({ snake: [at(2, 0), at(1, 0), at(0, 0)], dir: 'right', treat: at(0, 4) }), 'up');
+  const { state } = step(g, zero);
+  assert.equal(state.alive, true);
+  assert.equal(state.dir, 'right');
+  assert.deepEqual(state.snake[0], at(3, 0));
+  assert.deepEqual(state.queue, []);
+});
+
+test('easy off: corner heading up with right pressed still dies', () => {
+  const g = queueDirection(game5({ snake: [at(4, 0), at(4, 1), at(4, 2)], dir: 'up', treat: at(0, 4), easy: false }), 'right');
+  const { state, event } = step(g, zero);
+  assert.equal(event, 'died');
+  assert.equal(state.alive, false);
 });
 
 test('easy: turns into the vacating tail cell when it is the only open side', () => {
