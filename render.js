@@ -45,7 +45,7 @@ export function drawPreview(ctx, { look, width, height, time, tick }) {
   ctx.clearRect(0, 0, width, height);
   ctx.save();
   ctx.beginPath();
-  ctx.roundRect(0, 0, width, height, Math.min(12, height / 4));
+  roundRectPath(ctx, 0, 0, width, height, Math.min(12, height / 4));
   ctx.fillStyle = COLORS.grassA;
   ctx.fill();
   ctx.clip();
@@ -99,7 +99,7 @@ function drawBone(ctx, treat, cell, time) {
   ctx.translate(cx, cy);
   ctx.rotate(-0.5);
   ctx.beginPath();
-  ctx.roundRect(-cell * 0.28, -cell * 0.08, cell * 0.56, cell * 0.16, cell * 0.05);
+  roundRectPath(ctx, -cell * 0.28, -cell * 0.08, cell * 0.56, cell * 0.16, cell * 0.05);
   for (const sx of [-1, 1]) {
     for (const sy of [-1, 1]) {
       ctx.moveTo(sx * cell * 0.3 + knob, sy * cell * 0.09);
@@ -112,6 +112,21 @@ function drawBone(ctx, treat, cell, time) {
   ctx.fillStyle = COLORS.bone;
   ctx.fill();
   ctx.restore();
+}
+
+// ctx.roundRect needs Safari 16+/Firefox 112+; fall back to arcTo corners.
+function roundRectPath(ctx, x, y, w, h, r) {
+  if (ctx.roundRect) {
+    ctx.roundRect(x, y, w, h, r);
+    return;
+  }
+  r = Math.min(r, w / 2, h / 2);
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
 function tracePath(ctx, pts, maxRadius) {
@@ -181,6 +196,8 @@ function lighten(hex, amount) {
 
 // Long-haired: a soft fur skirt along both sides of the body with feathery
 // tufts swept back toward the tail, drawn under the body.
+const FUR_CHUNK = 40;
+
 function drawFringe(ctx, pts, cell, p) {
   const step = cell * 0.24;
   const tufts = samplePath(pts, step, cell * 0.35, cell * 0.15).flatMap(s => {
@@ -197,9 +214,15 @@ function drawFringe(ctx, pts, cell, p) {
       sweep: cell * 0.3,
     }));
   });
+  // Chunked so no single path piles up hundreds of overlapping subpaths.
+  const chunks = [];
+  for (let i = 0; i < tufts.length; i += FUR_CHUNK) {
+    const chunk = tufts.slice(i, i + FUR_CHUNK);
+    chunks.push(() => chunk.forEach(t => tuftPath(ctx, t)));
+  }
   furPass(
     ctx, cell, p.outline, lighten(p.body, 0.12),
-    () => tufts.forEach(t => tuftPath(ctx, t)),
+    chunks,
     () => tracePath(ctx, pts, cell * 0.45),
     cell * 0.9,
   );
@@ -218,7 +241,8 @@ function tuftPath(ctx, { x, y, nx, ny, tx, ty, len, width, sweep }) {
 }
 
 // Outline-then-fill so overlapping tufts merge into one furry silhouette.
-// `traceTufts` adds closed shapes to the path; the optional `spine` is
+// `traceTufts` (a function, or an array of them, one path each) adds closed
+// shapes to the path; the optional `spine` is
 // stroked `spineWidth` wide under them (the long coat's fur skirt).
 function furPass(ctx, cell, outline, fill, traceTufts, spine = null, spineWidth = 0) {
   const edge = cell * 0.08;
@@ -231,12 +255,19 @@ function furPass(ctx, cell, outline, fill, traceTufts, spine = null, spineWidth 
     ctx.lineWidth = spineWidth + edge;
     ctx.stroke();
   }
-  ctx.beginPath();
-  traceTufts();
+  const chunks = Array.isArray(traceTufts) ? traceTufts : [traceTufts];
   ctx.lineWidth = edge;
-  ctx.stroke();
+  for (const trace of chunks) {
+    ctx.beginPath();
+    trace();
+    ctx.stroke();
+  }
   ctx.fillStyle = fill;
-  ctx.fill();
+  for (const trace of chunks) {
+    ctx.beginPath();
+    trace();
+    ctx.fill();
+  }
   if (spine) {
     spine();
     ctx.strokeStyle = fill;
@@ -340,7 +371,7 @@ function drawLegs(ctx, pts, cell, tick, p) {
     ctx.translate(pts[i].x, pts[i].y);
     ctx.rotate(Math.atan2(a.y - b.y, a.x - b.x));
     ctx.beginPath();
-    ctx.roundRect(stride - w / 2, -half, w, half * 2, w / 2);
+    roundRectPath(ctx, stride - w / 2, -half, w, half * 2, w / 2);
     ctx.fill();
     ctx.restore();
   }

@@ -38,6 +38,7 @@ export function attachInput({ keyTarget, board, dpad, pauseButton, onDirection, 
   // One gesture = at most one turn, fired as soon as the threshold is crossed.
   let gesture = null;
   board.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
     gesture = { id: e.pointerId, x: e.clientX, y: e.clientY, fired: false };
     board.setPointerCapture?.(e.pointerId);

@@ -7,7 +7,7 @@ Snake, but you're a dachshund, and the pup only ever gets longer.
 ## Controls
 
 - **Desktop:** arrow keys or WASD to steer, Space or P to pause, Space or Enter to play again.
-- **Phone:** swipe on the board or use the on-screen arrows; tap to start, the pause button to pause.
+- **Phone:** swipe on the board or use the on-screen arrows; tap to start or play again, the pause button to pause.
 
 ## Pick your pup
 
@@ -25,4 +25,4 @@ Then open http://localhost:8000/.
 
     npm test
 
-Uses Node's built-in test runner (Node 18+).
+Uses Node's built-in test runner (Node 20+).

@@ -5,6 +5,8 @@ import { getStorage, loadBest, saveBest } from './best.js';
 import { COLORS, COATS, loadLook, saveLook } from './look.js';
 
 const MAX_FRAME_MS = 250;
+// Ignore restart taps/keys right after death so a stray press can't skip the Bonk card.
+const RESTART_LOCKOUT_MS = 400;
 
 const $ = id => document.getElementById(id);
 const canvas = $('board');
@@ -31,6 +33,7 @@ let acc = 0;
 let tick = 0;
 let last = performance.now();
 let boardPx = 0;
+let diedAt = -Infinity;
 
 function showOverlay(title, message, hint, withPicker = false) {
   $('title').textContent = title;
@@ -116,6 +119,7 @@ function startGame() {
 }
 
 function gameOver() {
+  diedAt = performance.now();
   if (game.score > best) {
     best = game.score;
     saveBest(storage, best);
@@ -137,6 +141,7 @@ function onDirection(dir) {
 }
 
 function onPrimary() {
+  if (phase === 'over' && performance.now() - diedAt < RESTART_LOCKOUT_MS) return;
   if (phase === 'ready' || phase === 'over') startGame();
   else togglePause();
 }
@@ -158,6 +163,7 @@ function fit() {
 }
 
 function frame(now) {
+  requestAnimationFrame(frame);
   // Clamp so a long frame (tab switch, slow device) can't fire a burst of moves.
   const dt = Math.min(now - last, MAX_FRAME_MS);
   last = now;
@@ -179,7 +185,6 @@ function frame(now) {
   if (!overlay.hidden && !picker.hidden && preview.clientWidth > 0) {
     drawPreview(previewCtx, { look, width: preview.clientWidth, height: preview.clientHeight, time: now, tick });
   }
-  requestAnimationFrame(frame);
 }
 
 attachInput({
@@ -201,6 +206,10 @@ for (const type of ['pointerdown', 'pointerup']) {
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && phase === 'playing') setPhase('paused');
+});
+
+window.addEventListener('blur', () => {
+  if (phase === 'playing') setPhase('paused');
 });
 
 new ResizeObserver(fit).observe(stage);
