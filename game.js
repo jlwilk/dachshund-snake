@@ -75,6 +75,7 @@ export function step(game, rng = Math.random) {
 
   const [queued, ...rest] = game.queue;
   let dir = queued ?? game.dir;
+  let queue = queued ? rest : game.queue;
   const head = game.snake[0];
   let next = { x: head.x + DIRS[dir].x, y: head.y + DIRS[dir].y };
 
@@ -82,10 +83,12 @@ export function step(game, rng = Math.random) {
     const turned = autoTurn(game, dir);
     if (turned) {
       dir = turned;
+      // A queued reversal of the new heading would run the pup into its own neck.
+      queue = queue.filter(d => d !== OPPOSITE[dir]);
       next = { x: head.x + DIRS[dir].x, y: head.y + DIRS[dir].y };
     }
   }
-  const base = { ...game, dir, queue: queued ? rest : game.queue };
+  const base = { ...game, dir, queue };
 
   if (!inBounds(game.size, next)) return { state: { ...base, alive: false }, event: 'died' };
 
