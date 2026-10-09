@@ -94,6 +94,21 @@
     .card h1 { margin: 0 0 8px; font-size: 1.5rem; }
     .card p { margin: 6px 0; line-height: 1.4; }
     .card .hint { opacity: 0.75; font-size: 0.9rem; }
+    .picker { pointer-events: auto; margin: 10px 0 4px; }
+    #preview { display: block; width: 160px; height: 56px; margin: 0 auto 8px; border-radius: 10px; }
+    .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 6px 0; }
+    .chips button {
+      min-height: 32px;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      border: 2px solid transparent;
+    }
+    .chips button[aria-checked="true"] {
+      background: var(--button-press);
+      border-color: var(--ink);
+      font-weight: 700;
+    }
     .dpad {
       grid-area: dpad;
       display: none;
@@ -111,6 +126,17 @@
     @media (pointer: coarse) {
       .dpad { display: grid; }
     }
+    /* Narrow phones: keep each chip row on one line so the card fits the board. */
+    @media (max-width: 480px) {
+      .card { max-width: min(92%, 360px); padding: 12px 12px; }
+      .card h1 { margin-bottom: 4px; font-size: 1.3rem; }
+      .card p { margin: 4px 0; font-size: 0.9rem; }
+      .card .hint { font-size: 0.8rem; }
+      .picker { margin: 6px 0 2px; }
+      #preview { margin-bottom: 6px; }
+      .chips { gap: 4px; margin: 4px 0; }
+      .chips button { padding: 2px 9px; font-size: 0.78rem; white-space: nowrap; }
+    }
     @media (pointer: coarse) and (orientation: landscape) {
       .app {
         max-width: none;
@@ -120,6 +146,12 @@
       }
       .dpad { align-content: center; }
       .card { max-width: 260px; padding: 12px 16px; }
+      .card h1 { margin-bottom: 4px; font-size: 1.25rem; }
+      .card p { margin: 4px 0; font-size: 0.85rem; }
+      .picker { margin: 6px 0 2px; }
+      #preview { width: 120px; height: 42px; margin-bottom: 4px; }
+      .chips { gap: 4px; margin: 4px 0; }
+      .chips button { min-height: 28px; padding: 2px 8px; font-size: 0.75rem; }
     }
   </style>
 </head>
@@ -137,6 +169,11 @@
         <div class="card">
           <h1 id="title">Dachshund Snake</h1>
           <p id="message"></p>
+          <div class="picker" id="picker">
+            <canvas id="preview" aria-hidden="true"></canvas>
+            <div class="chips" role="radiogroup" aria-label="Color" data-kind="color"></div>
+            <div class="chips" role="radiogroup" aria-label="Coat" data-kind="coat"></div>
+          </div>
           <p class="hint" id="hint"></p>
         </div>
       </div>
