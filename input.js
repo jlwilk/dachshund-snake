@@ -21,6 +21,7 @@ export function swipeDirection(dx, dy, threshold = SWIPE_THRESHOLD_PX) {
 
 export function attachInput({ keyTarget, board, dpad, pauseButton, onDirection, onPrimary, onPause, onTap }) {
   keyTarget.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     const action = keyToAction(e.key);
     if (!action) return;
     e.preventDefault();
