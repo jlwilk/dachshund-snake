@@ -36,7 +36,34 @@ Pages from `main` in the public repo `jlwilk/dachshund-snake`.
 - Desktop: arrow keys or WASD to steer; Space/P to pause; Enter/Space to
   restart after game over.
 - Mobile: swipe on the board to steer (min 24 px swipe); tap to start or
-  restart.
+  restart. Also an on-screen D-pad (see Phone support) for players who
+  prefer buttons.
+
+## Phone support
+
+Phones are a first-class target, not an afterthought.
+
+- Viewport meta with `width=device-width, initial-scale=1,
+  viewport-fit=cover`; layout respects safe-area insets (notch, home bar).
+- Portrait-first layout: HUD on top, square board sized to
+  `min(available width, available height minus HUD and D-pad)`, D-pad
+  below. Landscape works too: the board fills the height and the D-pad sits
+  beside it.
+- Canvas is rendered at `devicePixelRatio` so the pup stays crisp on retina
+  screens; resizes on orientation change.
+- Touch handling: `touch-action: none` on the game area and
+  `preventDefault` on touch moves, so swiping steers instead of scrolling
+  the page, pull-to-refresh, or zooming. No double-tap zoom, no text
+  selection or long-press callouts.
+- Swipe direction is read as soon as the finger passes the threshold
+  (not on lift), so turns feel immediate; one swipe = one turn.
+- D-pad: four large (≥ 56 px) arrow buttons, shown only on touch devices
+  (`pointer: coarse`), responding on `pointerdown` rather than click to
+  avoid delay. A pause button sits in the HUD.
+- Auto-pause when the tab is hidden or the phone is locked
+  (`visibilitychange`).
+- Verified in Chrome DevTools device emulation (iPhone and Android sizes,
+  both orientations) in addition to desktop.
 
 ## Look
 
@@ -75,7 +102,7 @@ All drawn on canvas — no image assets.
 `node --test` against `game.js` covering: movement, growth on eating, wall
 death, self-collision death, tail-vacating move allowed, reversal ignored,
 direction queue, treat never spawns on the pup, speed-up and floor.
-Rendering and input are verified by playing it in a browser.
+Rendering and input are verified by playing it in a browser, on desktop and in phone emulation.
 
 ## Out of scope
 
