@@ -257,3 +257,28 @@ test('easy: turns into the vacating tail cell when it is the only open side', ()
   assert.equal(state.dir, 'down');
   assert.deepEqual(state.snake[0], at(4, 3));
 });
+
+test('easy: eating does not speed the pup up', () => {
+  const g = easy5({ snake: [at(2, 2), at(1, 2), at(0, 2)], treat: at(3, 2) });
+  const { state, event } = step(g, zero);
+  assert.equal(event, 'ate');
+  assert.equal(state.tickMs, START_TICK_MS);
+});
+
+test('normal: eating still speeds the pup up', () => {
+  const g = game5({ snake: [at(2, 2), at(1, 2), at(0, 2)], treat: at(3, 2) });
+  assert.equal(step(g, zero).state.tickMs, START_TICK_MS - 3);
+});
+
+test('easy: a wall-ward press then a reversal does not bite the neck', () => {
+  let g = easy5({ snake: [at(2, 0), at(1, 0), at(0, 0)], dir: 'right', treat: at(4, 4) });
+  g = queueDirection(queueDirection(g, 'up'), 'left');
+  assert.deepEqual(g.queue, ['up', 'left']);
+  g = step(g, zero).state;
+  assert.equal(g.alive, true);
+  assert.deepEqual(g.snake[0], at(3, 0));
+  assert.deepEqual(g.queue, []);
+  g = step(g, zero).state;
+  assert.equal(g.alive, true);
+  assert.deepEqual(g.snake[0], at(4, 0));
+});

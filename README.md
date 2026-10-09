@@ -15,7 +15,7 @@ On the start screen (or after a bonk), choose a color — Red, Black & tan (the 
 
 ### Easy mode
 
-Also on the start screen, choose Easy and the pup turns itself away from walls when it can (it still can't run into itself). Easy mode keeps its own best score.
+Also on the start screen, choose Easy and the pup turns itself away from walls when it can (it still can't run into itself) and keeps a gentle, steady pace instead of speeding up. Easy mode keeps its own best score.
 
 ## Privacy
 

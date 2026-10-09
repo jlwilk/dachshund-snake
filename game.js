@@ -89,11 +89,12 @@ export function step(game, rng = Math.random) {
     const turned = autoTurn(game, dir);
     if (turned) {
       dir = turned;
-      // A queued reversal of the new heading would run the pup into its own neck.
-      queue = queue.filter(d => d !== OPPOSITE[dir]);
       next = { x: head.x + DIRS[dir].x, y: head.y + DIRS[dir].y };
     }
   }
+  // After a discarded press or an auto-turn, a leftover press may reverse the final
+  // heading and run the pup into its own neck, so drop it.
+  if (game.easy) queue = queue.filter(d => d !== OPPOSITE[dir]);
   const base = { ...game, dir, queue };
 
   if (!inBounds(game.size, next)) return { state: { ...base, alive: false }, event: 'died' };
@@ -112,7 +113,8 @@ export function step(game, rng = Math.random) {
       ...base,
       snake,
       score: game.score + 1,
-      tickMs: Math.max(MIN_TICK_MS, game.tickMs - TICK_STEP_MS),
+      // Easy mode keeps a gentle, fixed pace.
+      tickMs: game.easy ? game.tickMs : Math.max(MIN_TICK_MS, game.tickMs - TICK_STEP_MS),
       treat: placeTreat(game.size, snake, rng),
     },
     event: 'ate',

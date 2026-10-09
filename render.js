@@ -363,10 +363,12 @@ function drawLegs(ctx, pts, cell, tick, p) {
   const half = cell * 0.55;
   const w = cell * 0.16;
   ctx.fillStyle = p.leg;
-  for (let i = 1; i < pts.length - 1; i += 2) {
+  // Just front legs behind the head and back legs before the tail, however long the pup gets.
+  const hips = [...new Set([1, Math.max(1, pts.length - 2)])];
+  hips.forEach((i, n) => {
     const a = pts[i - 1];
     const b = pts[i + 1];
-    const stride = ((i + tick) % 4 < 2 ? 1 : -1) * cell * 0.1;
+    const stride = ((n + tick) % 2 ? 1 : -1) * cell * 0.1;
     ctx.save();
     ctx.translate(pts[i].x, pts[i].y);
     ctx.rotate(Math.atan2(a.y - b.y, a.x - b.x));
@@ -374,7 +376,7 @@ function drawLegs(ctx, pts, cell, tick, p) {
     roundRectPath(ctx, stride - w / 2, -half, w, half * 2, w / 2);
     ctx.fill();
     ctx.restore();
-  }
+  });
 }
 
 function drawTail(ctx, base, angle, cell, time, p, coat) {
